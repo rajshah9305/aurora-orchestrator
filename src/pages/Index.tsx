@@ -112,13 +112,8 @@ const Index = () => {
         </div>
 
         {/* Center Panel - Execution View */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 overflow-hidden">
-            <ExecutionPanel messages={messages} activeAgent={activeAgent} />
-          </div>
-          
-          {/* Command Bar */}
-          <CommandBar onSubmit={handleCommand} isProcessing={isProcessing} />
+        <div className="flex-1 min-w-0">
+          <ExecutionPanel messages={messages} activeAgent={activeAgent} />
         </div>
 
         {/* Right Panel - Logs */}
@@ -126,6 +121,9 @@ const Index = () => {
           <LogsPanel logs={logs} />
         </div>
       </div>
+
+      {/* Command Bar - Full Width */}
+      <CommandBar onSubmit={handleCommand} isProcessing={isProcessing} />
     </div>
   );
 };
