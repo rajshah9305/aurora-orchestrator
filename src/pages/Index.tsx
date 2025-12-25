@@ -103,7 +103,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Agent Management */}
-        <div className="w-64 flex-shrink-0">
+        <div className="w-72 flex-shrink-0 hidden md:block">
           <AgentPanel
             agents={agents}
             activeAgentId={activeAgentId}
@@ -117,7 +117,7 @@ const Index = () => {
         </div>
 
         {/* Right Panel - Logs */}
-        <div className="w-80 flex-shrink-0">
+        <div className="w-80 flex-shrink-0 hidden lg:block">
           <LogsPanel logs={logs} />
         </div>
       </div>
