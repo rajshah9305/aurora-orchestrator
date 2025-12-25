@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AgentCard } from "./AgentCard";
 import type { Agent } from "@/types/agent";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users, Zap, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AgentPanelProps {
@@ -21,90 +21,143 @@ export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelP
 
   const runningAgents = filteredAgents.filter((a) => a.status === "running");
   const otherAgents = filteredAgents.filter((a) => a.status !== "running");
+  const activeCount = agents.filter((a) => a.status === "running").length;
 
   return (
     <div className="h-full flex flex-col bg-panel border-r border-panel-border">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Agents</h2>
-          <button
-            className={cn(
-              "h-7 w-7 rounded-md flex items-center justify-center",
-              "bg-primary text-primary-foreground",
-              "hover:bg-primary/90 transition-colors"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+              <Users className="h-4 w-4 text-foreground" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-foreground">Agents</h2>
+              <p className="text-[10px] text-muted-foreground">{agents.length} registered</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              className={cn(
+                "h-8 w-8 rounded-lg flex items-center justify-center",
+                "bg-primary text-primary-foreground",
+                "hover:bg-primary/90 transition-all duration-200",
+                "shadow-sm shadow-primary/20 active:scale-95"
+              )}
+              title="Add Agent"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+            <button className="btn-icon" title="More options">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search agents..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(
-              "w-full h-8 pl-8 pr-3 rounded-md text-sm",
-              "bg-background border border-input",
-              "placeholder:text-muted-foreground",
-              "focus:outline-none focus:ring-1 focus:ring-ring"
-            )}
+            className="search-input"
           />
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="px-4 py-3 border-b border-border bg-secondary/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <div className="h-2 w-2 rounded-full bg-status-running" />
+              {activeCount > 0 && (
+                <div className="absolute inset-0 h-2 w-2 rounded-full bg-status-running animate-ping" />
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              <span className="font-bold text-foreground">{activeCount}</span> active
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Zap className="h-3 w-3 text-primary" />
+            <span className="font-medium">{agents.filter(a => a.status === 'completed').length} completed</span>
+          </div>
         </div>
       </div>
 
       {/* Agent List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {runningAgents.length > 0 && (
-          <div className="mb-3">
-            <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-              Running
-            </p>
-            {runningAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                isActive={agent.id === activeAgentId}
-                onClick={() => onAgentSelect(agent.id)}
-              />
-            ))}
+          <div className="mb-2">
+            <div className="flex items-center gap-2 px-3 py-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                Running ({runningAgents.length})
+              </p>
+            </div>
+            <div className="space-y-1">
+              {runningAgents.map((agent) => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  isActive={agent.id === activeAgentId}
+                  onClick={() => onAgentSelect(agent.id)}
+                />
+              ))}
+            </div>
           </div>
         )}
 
         {otherAgents.length > 0 && (
           <div>
             {runningAgents.length > 0 && (
-              <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                All Agents
-              </p>
+              <div className="px-3 py-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  All Agents
+                </p>
+              </div>
             )}
-            {otherAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                isActive={agent.id === activeAgentId}
-                onClick={() => onAgentSelect(agent.id)}
-              />
-            ))}
+            <div className="space-y-1">
+              {otherAgents.map((agent) => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  isActive={agent.id === activeAgentId}
+                  onClick={() => onAgentSelect(agent.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {filteredAgents.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-8 px-4">
+            <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center mb-3">
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">No agents found</p>
+            <p className="text-xs text-muted-foreground text-center">
+              Try adjusting your search terms
+            </p>
           </div>
         )}
       </div>
 
-      {/* Stats Footer */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Total Agents</span>
-          <span className="font-medium text-foreground">{agents.length}</span>
-        </div>
-        <div className="flex items-center justify-between text-xs mt-1">
-          <span className="text-muted-foreground">Active</span>
-          <span className="font-medium text-primary">
-            {agents.filter((a) => a.status === "running").length}
-          </span>
+      {/* Footer Stats */}
+      <div className="p-4 border-t border-border bg-secondary/20">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="text-center p-2 rounded-lg bg-background border border-border">
+            <p className="text-lg font-bold text-foreground">{agents.length}</p>
+            <p className="text-[10px] text-muted-foreground font-medium">Total</p>
+          </div>
+          <div className="text-center p-2 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-lg font-bold text-primary">{activeCount}</p>
+            <p className="text-[10px] text-primary/70 font-medium">Active</p>
+          </div>
         </div>
       </div>
     </div>
