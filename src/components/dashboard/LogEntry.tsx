@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 interface LogEntryProps {
   log: LogEntryType;
+  isLatest?: boolean;
 }
 
 const levelConfig: Record<
