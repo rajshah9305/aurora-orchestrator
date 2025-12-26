@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { LogEntryComponent } from "./LogEntry";
 import type { LogEntry } from "@/types/agent";
-import { Search, Filter, ArrowDown, Trash2, ChevronDown, Terminal, AlertCircle, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { Search, Filter, ArrowDown, Trash2, ChevronDown, Terminal, AlertCircle, AlertTriangle, CheckCircle, Info, Sparkles, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LogsPanelProps {
   logs: LogEntry[];
+  onAnalyze?: (logs: LogEntry[]) => Promise<string>;
+  isAnalyzing?: boolean;
 }
 
 type LogLevel = "all" | "info" | "warning" | "error" | "success";
@@ -17,12 +19,25 @@ const levelIcons: Record<Exclude<LogLevel, 'all'>, React.ElementType> = {
   success: CheckCircle,
 };
 
-export function LogsPanel({ logs }: LogsPanelProps) {
+export function LogsPanel({ logs, onAnalyze, isAnalyzing = false }: LogsPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
   const [autoScroll, setAutoScroll] = useState(true);
   const [showFilter, setShowFilter] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleAnalyze = async () => {
+    if (!onAnalyze || logs.length === 0) return;
+    setShowAnalysis(true);
+    try {
+      const result = await onAnalyze(logs);
+      setAnalysisResult(result);
+    } catch (error) {
+      setAnalysisResult("Failed to analyze logs. Please try again.");
+    }
+  };
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = log.message
@@ -60,6 +75,24 @@ export function LogsPanel({ logs }: LogsPanelProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || logs.length === 0}
+              className={cn(
+                "h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-all duration-200",
+                isAnalyzing 
+                  ? "bg-primary/20 text-primary cursor-wait"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20"
+              )}
+              title="Analyze logs with AI"
+            >
+              {isAnalyzing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              <span>Analyze</span>
+            </button>
             <button
               onClick={() => setAutoScroll(!autoScroll)}
               className={cn(
@@ -148,9 +181,29 @@ export function LogsPanel({ logs }: LogsPanelProps) {
         )}
       </div>
 
-      {/* Log Stream */}
+      {/* Log Stream or Analysis */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        {filteredLogs.length === 0 ? (
+        {showAnalysis && analysisResult ? (
+          <div className="p-4 animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">AI Analysis</span>
+              </div>
+              <button
+                onClick={() => { setShowAnalysis(false); setAnalysisResult(null); }}
+                className="btn-icon h-6 w-6"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="prose prose-sm prose-invert max-w-none text-muted-foreground">
+              <div className="whitespace-pre-wrap text-xs leading-relaxed">
+                {analysisResult}
+              </div>
+            </div>
+          </div>
+        ) : filteredLogs.length === 0 ? (
           <div className="h-full flex items-center justify-center p-6">
             <div className="text-center">
               <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-3">

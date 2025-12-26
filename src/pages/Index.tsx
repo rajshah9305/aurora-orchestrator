@@ -5,6 +5,8 @@ import { ExecutionPanel } from "@/components/dashboard/ExecutionPanel";
 import { LogsPanel } from "@/components/dashboard/LogsPanel";
 import { CommandBar } from "@/components/dashboard/CommandBar";
 import { mockAgents, mockMessages, mockLogs } from "@/data/mockData";
+import { useAIChat } from "@/hooks/useAIChat";
+import { toast } from "sonner";
 import type { Agent, ExecutionMessage, LogEntry } from "@/types/agent";
 
 const Index = () => {
@@ -13,6 +15,8 @@ const Index = () => {
   const [messages, setMessages] = useState<ExecutionMessage[]>(mockMessages);
   const [logs, setLogs] = useState<LogEntry[]>(mockLogs);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const { sendMessage, analyzeContent, isLoading: isAILoading, error: aiError } = useAIChat();
 
   const activeAgent = agents.find((a) => a.id === activeAgentId) || null;
 
@@ -24,14 +28,14 @@ const Index = () => {
     setIsProcessing(true);
 
     // Add user command as a new message
-    const newMessage: ExecutionMessage = {
+    const userMessage: ExecutionMessage = {
       id: `msg-${Date.now()}`,
       agentId: activeAgentId || "1",
       type: "system",
-      content: `User command received: "${command}"`,
+      content: `User command: "${command}"`,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => [...prev, userMessage]);
 
     // Add log entry
     const newLog: LogEntry = {
@@ -43,30 +47,124 @@ const Index = () => {
     };
     setLogs((prev) => [...prev, newLog]);
 
-    // Simulate processing
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Create a placeholder for the AI response
+      const aiMessageId = `msg-${Date.now() + 1}`;
+      let aiContent = "";
 
-    // Simulate agent response
-    const responseMessage: ExecutionMessage = {
-      id: `msg-${Date.now() + 1}`,
-      agentId: activeAgentId || "1",
-      type: "reasoning",
-      content: `Analyzing request and determining optimal execution path for: "${command}"`,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, responseMessage]);
+      // Add initial AI response message
+      setMessages((prev) => [...prev, {
+        id: aiMessageId,
+        agentId: activeAgentId || "1",
+        type: "reasoning",
+        content: "",
+        timestamp: new Date(),
+      }]);
 
-    // Add completion log
-    const completionLog: LogEntry = {
-      id: `log-${Date.now() + 1}`,
-      level: "success",
-      message: "Command processed successfully",
-      timestamp: new Date(),
-      source: "orchestrator",
-    };
-    setLogs((prev) => [...prev, completionLog]);
+      // Stream AI response
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+      const response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ 
+          messages: [{ role: "user", content: command }],
+          type: "orchestrate"
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              aiContent += content;
+              setMessages((prev) => prev.map((m) => 
+                m.id === aiMessageId ? { ...m, content: aiContent } : m
+              ));
+            }
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+
+      // Add completion log
+      const completionLog: LogEntry = {
+        id: `log-${Date.now() + 2}`,
+        level: "success",
+        message: "AI command processed successfully",
+        timestamp: new Date(),
+        source: "ai_orchestrator",
+      };
+      setLogs((prev) => [...prev, completionLog]);
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`AI Error: ${errorMessage}`);
+      
+      // Add error log
+      const errorLog: LogEntry = {
+        id: `log-${Date.now() + 2}`,
+        level: "error",
+        message: `AI processing failed: ${errorMessage}`,
+        timestamp: new Date(),
+        source: "ai_orchestrator",
+      };
+      setLogs((prev) => [...prev, errorLog]);
+
+      // Add error message
+      setMessages((prev) => [...prev, {
+        id: `msg-${Date.now() + 2}`,
+        agentId: activeAgentId || "1",
+        type: "error",
+        content: `Failed to process command: ${errorMessage}`,
+        timestamp: new Date(),
+      }]);
+    }
 
     setIsProcessing(false);
+  };
+
+  const handleAnalyzeLogs = async (logsToAnalyze: LogEntry[]): Promise<string> => {
+    const logsText = logsToAnalyze
+      .slice(-30) // Last 30 logs
+      .map((log) => `[${log.level.toUpperCase()}] ${log.timestamp.toISOString()} - ${log.source}: ${log.message}`)
+      .join("\n");
+
+    const prompt = `Analyze these system logs and provide insights:\n\n${logsText}`;
+    return analyzeContent(prompt);
   };
 
   // Simulate real-time log updates
@@ -118,7 +216,11 @@ const Index = () => {
 
         {/* Right Panel - Logs */}
         <div className="w-80 flex-shrink-0 hidden lg:block">
-          <LogsPanel logs={logs} />
+          <LogsPanel 
+            logs={logs} 
+            onAnalyze={handleAnalyzeLogs}
+            isAnalyzing={isAILoading}
+          />
         </div>
       </div>
 
