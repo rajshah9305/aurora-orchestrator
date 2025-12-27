@@ -1,21 +1,26 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Command, Sparkles, Keyboard, Mic, Paperclip } from "lucide-react";
+import { Send, Sparkles, Mic, Paperclip, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FileUpload, UploadedFile } from "./FileUpload";
 
 interface CommandBarProps {
-  onSubmit: (command: string) => void;
+  onSubmit: (command: string, files?: UploadedFile[]) => void;
   isProcessing?: boolean;
 }
 
 export function CommandBar({ onSubmit, isProcessing = false }: CommandBarProps) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = () => {
-    if (input.trim() && !isProcessing) {
-      onSubmit(input.trim());
+    if ((input.trim() || files.length > 0) && !isProcessing) {
+      onSubmit(input.trim(), files.length > 0 ? files : undefined);
       setInput("");
+      setFiles([]);
+      setShowFileUpload(false);
     }
   };
 
@@ -37,6 +42,13 @@ export function CommandBar({ onSubmit, isProcessing = false }: CommandBarProps) 
     }
   }, [input]);
 
+  const handleFilesChange = (newFiles: UploadedFile[]) => {
+    setFiles(newFiles);
+    if (newFiles.length === 0) {
+      setShowFileUpload(false);
+    }
+  };
+
   return (
     <div className="flex-shrink-0 border-t border-border bg-background">
       <div className="px-6 py-4">
@@ -48,19 +60,43 @@ export function CommandBar({ onSubmit, isProcessing = false }: CommandBarProps) 
               : "border-input hover:border-input/80"
           )}
         >
+          {/* File Upload Section */}
+          {showFileUpload && (
+            <div className="px-4 pt-4 pb-2 border-b border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">Attachments</span>
+                <button
+                  onClick={() => { setShowFileUpload(false); setFiles([]); }}
+                  className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-secondary transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </div>
+              <FileUpload files={files} onFilesChange={handleFilesChange} />
+            </div>
+          )}
+
           {/* Main Input Area */}
           <div className="flex items-end gap-3 p-4">
             {/* Left Actions */}
             <div className="flex items-center gap-1 pb-0.5">
               <button
+                onClick={() => setShowFileUpload(!showFileUpload)}
                 className={cn(
                   "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-200",
-                  "text-muted-foreground hover:text-foreground hover:bg-secondary",
-                  "active:scale-95"
+                  "active:scale-95",
+                  showFileUpload || files.length > 0
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 )}
                 title="Attach file"
               >
                 <Paperclip className="h-4 w-4" />
+                {files.length > 0 && !showFileUpload && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                    {files.length}
+                  </span>
+                )}
               </button>
               <button
                 className={cn(
@@ -98,11 +134,11 @@ export function CommandBar({ onSubmit, isProcessing = false }: CommandBarProps) 
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
-              disabled={!input.trim() || isProcessing}
+              disabled={(!input.trim() && files.length === 0) || isProcessing}
               className={cn(
                 "flex-shrink-0 h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-200",
                 "active:scale-95",
-                input.trim() && !isProcessing
+                (input.trim() || files.length > 0) && !isProcessing
                   ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/25"
                   : "bg-secondary text-muted-foreground cursor-not-allowed"
               )}
