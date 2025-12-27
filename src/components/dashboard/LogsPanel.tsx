@@ -3,11 +3,13 @@ import { LogEntryComponent } from "./LogEntry";
 import type { LogEntry } from "@/types/agent";
 import { Search, Filter, ArrowDown, Trash2, ChevronDown, Terminal, AlertCircle, AlertTriangle, CheckCircle, Info, Sparkles, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface LogsPanelProps {
   logs: LogEntry[];
   onAnalyze?: (logs: LogEntry[]) => Promise<string>;
   isAnalyzing?: boolean;
+  onClearLogs?: () => void;
 }
 
 type LogLevel = "all" | "info" | "warning" | "error" | "success";
@@ -19,7 +21,7 @@ const levelIcons: Record<Exclude<LogLevel, 'all'>, React.ElementType> = {
   success: CheckCircle,
 };
 
-export function LogsPanel({ logs, onAnalyze, isAnalyzing = false }: LogsPanelProps) {
+export function LogsPanel({ logs, onAnalyze, isAnalyzing = false, onClearLogs }: LogsPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
   const [autoScroll, setAutoScroll] = useState(true);
@@ -36,6 +38,13 @@ export function LogsPanel({ logs, onAnalyze, isAnalyzing = false }: LogsPanelPro
       setAnalysisResult(result);
     } catch (error) {
       setAnalysisResult("Failed to analyze logs. Please try again.");
+    }
+  };
+
+  const handleClearLogs = () => {
+    if (onClearLogs) {
+      onClearLogs();
+      toast.success("Logs cleared");
     }
   };
 
@@ -106,8 +115,10 @@ export function LogsPanel({ logs, onAnalyze, isAnalyzing = false }: LogsPanelPro
               <ArrowDown className="h-4 w-4" />
             </button>
             <button
+              onClick={handleClearLogs}
               className="btn-icon"
               title="Clear logs"
+              disabled={logs.length === 0}
             >
               <Trash2 className="h-4 w-4" />
             </button>

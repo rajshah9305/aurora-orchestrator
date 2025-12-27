@@ -1,7 +1,26 @@
 import { Activity, Bell, Settings, HelpCircle, User, ChevronDown, Wifi, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 
-export function Header() {
+interface HeaderProps {
+  notificationCount?: number;
+  onNotificationsClick: () => void;
+  onSettingsClick: () => void;
+  onProfileClick: () => void;
+  onHelpClick: () => void;
+  userName?: string;
+  userRole?: string;
+}
+
+export function Header({
+  notificationCount = 0,
+  onNotificationsClick,
+  onSettingsClick,
+  onProfileClick,
+  onHelpClick,
+  userName = "Admin",
+  userRole = "Super Admin",
+}: HeaderProps) {
   return (
     <header className="flex-shrink-0 h-16 border-b border-border bg-background/95 backdrop-blur-sm px-6 sticky top-0 z-50">
       <div className="h-full flex items-center justify-between">
@@ -61,7 +80,9 @@ export function Header() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <button
+              onClick={onHelpClick}
               className={cn(
                 "btn-icon",
                 "hover:bg-secondary"
@@ -71,6 +92,7 @@ export function Header() {
               <HelpCircle className="h-[18px] w-[18px]" />
             </button>
             <button
+              onClick={onNotificationsClick}
               className={cn(
                 "btn-icon relative",
                 "hover:bg-secondary"
@@ -78,9 +100,14 @@ export function Header() {
               title="Notifications"
             >
               <Bell className="h-[18px] w-[18px]" />
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-background" />
+              {notificationCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                  {notificationCount > 9 ? "9+" : notificationCount}
+                </span>
+              )}
             </button>
             <button
+              onClick={onSettingsClick}
               className={cn(
                 "btn-icon",
                 "hover:bg-secondary"
@@ -95,15 +122,18 @@ export function Header() {
           <div className="h-8 w-px bg-border" />
 
           {/* User Menu */}
-          <button className="flex items-center gap-2.5 hover:bg-secondary rounded-lg px-2.5 py-2 transition-all duration-200 group">
+          <button 
+            onClick={onProfileClick}
+            className="flex items-center gap-2.5 hover:bg-secondary rounded-lg px-2.5 py-2 transition-all duration-200 group"
+          >
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
               <User className="h-4 w-4 text-primary" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold text-foreground leading-none">Admin</p>
+              <p className="text-sm font-semibold text-foreground leading-none">{userName}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                 <Shield className="h-2.5 w-2.5" />
-                Super Admin
+                {userRole}
               </p>
             </div>
             <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors hidden sm:block" />

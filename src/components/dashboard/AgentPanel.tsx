@@ -1,16 +1,37 @@
 import { useState } from "react";
 import { AgentCard } from "./AgentCard";
 import type { Agent } from "@/types/agent";
-import { Plus, Search, Users, Zap, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Users, Zap, MoreHorizontal, Play, Square, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AgentPanelProps {
   agents: Agent[];
   activeAgentId: string | null;
   onAgentSelect: (agentId: string) => void;
+  onCreateAgent: () => void;
+  onEditAgent: (agent: Agent) => void;
+  onDeleteAgent: (agent: Agent) => void;
+  onStartAgent: (agentId: string) => void;
+  onStopAgent: (agentId: string) => void;
 }
 
-export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelProps) {
+export function AgentPanel({ 
+  agents, 
+  activeAgentId, 
+  onAgentSelect,
+  onCreateAgent,
+  onEditAgent,
+  onDeleteAgent,
+  onStartAgent,
+  onStopAgent,
+}: AgentPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredAgents = agents.filter(
@@ -39,6 +60,7 @@ export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelP
           </div>
           <div className="flex items-center gap-1">
             <button
+              onClick={onCreateAgent}
               className={cn(
                 "h-8 w-8 rounded-lg flex items-center justify-center",
                 "bg-primary text-primary-foreground",
@@ -48,9 +70,6 @@ export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelP
               title="Add Agent"
             >
               <Plus className="h-4 w-4" />
-            </button>
-            <button className="btn-icon" title="More options">
-              <MoreHorizontal className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -101,12 +120,20 @@ export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelP
             </div>
             <div className="space-y-1">
               {runningAgents.map((agent) => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                  isActive={agent.id === activeAgentId}
-                  onClick={() => onAgentSelect(agent.id)}
-                />
+                <div key={agent.id} className="relative group">
+                  <AgentCard
+                    agent={agent}
+                    isActive={agent.id === activeAgentId}
+                    onClick={() => onAgentSelect(agent.id)}
+                  />
+                  <AgentContextMenu 
+                    agent={agent}
+                    onEdit={() => onEditAgent(agent)}
+                    onDelete={() => onDeleteAgent(agent)}
+                    onStart={() => onStartAgent(agent.id)}
+                    onStop={() => onStopAgent(agent.id)}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -123,12 +150,20 @@ export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelP
             )}
             <div className="space-y-1">
               {otherAgents.map((agent) => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                  isActive={agent.id === activeAgentId}
-                  onClick={() => onAgentSelect(agent.id)}
-                />
+                <div key={agent.id} className="relative group">
+                  <AgentCard
+                    agent={agent}
+                    isActive={agent.id === activeAgentId}
+                    onClick={() => onAgentSelect(agent.id)}
+                  />
+                  <AgentContextMenu 
+                    agent={agent}
+                    onEdit={() => onEditAgent(agent)}
+                    onDelete={() => onDeleteAgent(agent)}
+                    onStart={() => onStartAgent(agent.id)}
+                    onStop={() => onStopAgent(agent.id)}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -160,6 +195,50 @@ export function AgentPanel({ agents, activeAgentId, onAgentSelect }: AgentPanelP
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface AgentContextMenuProps {
+  agent: Agent;
+  onEdit: () => void;
+  onDelete: () => void;
+  onStart: () => void;
+  onStop: () => void;
+}
+
+function AgentContextMenu({ agent, onEdit, onDelete, onStart, onStop }: AgentContextMenuProps) {
+  return (
+    <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-secondary transition-colors">
+            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          {agent.status === "running" ? (
+            <DropdownMenuItem onClick={onStop}>
+              <Square className="mr-2 h-4 w-4" />
+              Stop
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={onStart}>
+              <Play className="mr-2 h-4 w-4" />
+              Start
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onEdit}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
