@@ -14,7 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          id: string
+          last_active: string | null
+          name: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          id?: string
+          last_active?: string | null
+          name: string
+          role: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          id?: string
+          last_active?: string | null
+          name?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      execution_messages: {
+        Row: {
+          agent_id: string | null
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          type: string
+        }
+        Insert: {
+          agent_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          type: string
+        }
+        Update: {
+          agent_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_messages_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      log_entries: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          level: string
+          message: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          level: string
+          message: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          level?: string
+          message?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          active_agent_id: string | null
+          created_at: string
+          cursor_position: Json | null
+          id: string
+          last_seen: string
+          user_color: string
+          user_identifier: string
+          user_name: string
+        }
+        Insert: {
+          active_agent_id?: string | null
+          created_at?: string
+          cursor_position?: Json | null
+          id?: string
+          last_seen?: string
+          user_color?: string
+          user_identifier: string
+          user_name?: string
+        }
+        Update: {
+          active_agent_id?: string | null
+          created_at?: string
+          cursor_position?: Json | null
+          id?: string
+          last_seen?: string
+          user_color?: string
+          user_identifier?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_presence_active_agent_id_fkey"
+            columns: ["active_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          ai_model: string
+          auto_scroll: boolean
+          created_at: string
+          id: string
+          log_retention: number
+          refresh_interval: number
+          theme: string
+          updated_at: string
+          user_identifier: string
+        }
+        Insert: {
+          ai_model?: string
+          auto_scroll?: boolean
+          created_at?: string
+          id?: string
+          log_retention?: number
+          refresh_interval?: number
+          theme?: string
+          updated_at?: string
+          user_identifier: string
+        }
+        Update: {
+          ai_model?: string
+          auto_scroll?: boolean
+          created_at?: string
+          id?: string
+          log_retention?: number
+          refresh_interval?: number
+          theme?: string
+          updated_at?: string
+          user_identifier?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

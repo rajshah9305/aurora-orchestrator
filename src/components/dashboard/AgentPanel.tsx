@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AgentCard } from "./AgentCard";
 import type { Agent } from "@/types/agent";
+import type { PresenceUser } from "@/hooks/usePresence";
 import { Plus, Search, Users, Zap, MoreHorizontal, Play, Square, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -10,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface AgentPanelProps {
   agents: Agent[];
@@ -20,6 +22,7 @@ interface AgentPanelProps {
   onDeleteAgent: (agent: Agent) => void;
   onStartAgent: (agentId: string) => void;
   onStopAgent: (agentId: string) => void;
+  onlineUsers?: PresenceUser[];
 }
 
 export function AgentPanel({ 
@@ -31,6 +34,7 @@ export function AgentPanel({
   onDeleteAgent,
   onStartAgent,
   onStopAgent,
+  onlineUsers = [],
 }: AgentPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -119,22 +123,46 @@ export function AgentPanel({
               </p>
             </div>
             <div className="space-y-1">
-              {runningAgents.map((agent) => (
-                <div key={agent.id} className="relative group">
-                  <AgentCard
-                    agent={agent}
-                    isActive={agent.id === activeAgentId}
-                    onClick={() => onAgentSelect(agent.id)}
-                  />
-                  <AgentContextMenu 
-                    agent={agent}
-                    onEdit={() => onEditAgent(agent)}
-                    onDelete={() => onDeleteAgent(agent)}
-                    onStart={() => onStartAgent(agent.id)}
-                    onStop={() => onStopAgent(agent.id)}
-                  />
-                </div>
-              ))}
+              {runningAgents.map((agent) => {
+                const viewingUsers = onlineUsers.filter(u => u.activeAgentId === agent.id);
+                return (
+                  <div key={agent.id} className="relative group">
+                    <AgentCard
+                      agent={agent}
+                      isActive={agent.id === activeAgentId}
+                      onClick={() => onAgentSelect(agent.id)}
+                    />
+                    {viewingUsers.length > 0 && (
+                      <TooltipProvider>
+                        <div className="absolute left-2 top-1 flex -space-x-1">
+                          {viewingUsers.slice(0, 3).map((user) => (
+                            <Tooltip key={user.id}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="w-4 h-4 rounded-full border border-background text-[8px] flex items-center justify-center text-white"
+                                  style={{ backgroundColor: user.userColor }}
+                                >
+                                  {user.userName.charAt(0).toUpperCase()}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="text-xs">
+                                {user.userName} is viewing
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TooltipProvider>
+                    )}
+                    <AgentContextMenu 
+                      agent={agent}
+                      onEdit={() => onEditAgent(agent)}
+                      onDelete={() => onDeleteAgent(agent)}
+                      onStart={() => onStartAgent(agent.id)}
+                      onStop={() => onStopAgent(agent.id)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -149,22 +177,46 @@ export function AgentPanel({
               </div>
             )}
             <div className="space-y-1">
-              {otherAgents.map((agent) => (
-                <div key={agent.id} className="relative group">
-                  <AgentCard
-                    agent={agent}
-                    isActive={agent.id === activeAgentId}
-                    onClick={() => onAgentSelect(agent.id)}
-                  />
-                  <AgentContextMenu 
-                    agent={agent}
-                    onEdit={() => onEditAgent(agent)}
-                    onDelete={() => onDeleteAgent(agent)}
-                    onStart={() => onStartAgent(agent.id)}
-                    onStop={() => onStopAgent(agent.id)}
-                  />
-                </div>
-              ))}
+              {otherAgents.map((agent) => {
+                const viewingUsers = onlineUsers.filter(u => u.activeAgentId === agent.id);
+                return (
+                  <div key={agent.id} className="relative group">
+                    <AgentCard
+                      agent={agent}
+                      isActive={agent.id === activeAgentId}
+                      onClick={() => onAgentSelect(agent.id)}
+                    />
+                    {viewingUsers.length > 0 && (
+                      <TooltipProvider>
+                        <div className="absolute left-2 top-1 flex -space-x-1">
+                          {viewingUsers.slice(0, 3).map((user) => (
+                            <Tooltip key={user.id}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="w-4 h-4 rounded-full border border-background text-[8px] flex items-center justify-center text-white"
+                                  style={{ backgroundColor: user.userColor }}
+                                >
+                                  {user.userName.charAt(0).toUpperCase()}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="text-xs">
+                                {user.userName} is viewing
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TooltipProvider>
+                    )}
+                    <AgentContextMenu 
+                      agent={agent}
+                      onEdit={() => onEditAgent(agent)}
+                      onDelete={() => onDeleteAgent(agent)}
+                      onStart={() => onStartAgent(agent.id)}
+                      onStop={() => onStopAgent(agent.id)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
