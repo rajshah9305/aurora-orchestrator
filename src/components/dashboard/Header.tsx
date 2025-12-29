@@ -1,6 +1,7 @@
 import { Activity, Bell, Settings, HelpCircle, User, ChevronDown, Wifi, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import type { ReactNode } from "react";
 
 interface HeaderProps {
   notificationCount?: number;
@@ -10,6 +11,7 @@ interface HeaderProps {
   onHelpClick: () => void;
   userName?: string;
   userRole?: string;
+  children?: ReactNode;
 }
 
 export function Header({
@@ -20,6 +22,7 @@ export function Header({
   onHelpClick,
   userName = "Admin",
   userRole = "Super Admin",
+  children,
 }: HeaderProps) {
   return (
     <header className="flex-shrink-0 h-16 border-b border-border bg-background/95 backdrop-blur-sm px-6 sticky top-0 z-50">
@@ -64,6 +67,9 @@ export function Header({
 
         {/* Right - Actions */}
         <div className="flex items-center gap-2">
+          {/* Presence Indicator */}
+          {children}
+          
           {/* System Status */}
           <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-status-completed/10 mr-2">
             <div className="relative">
